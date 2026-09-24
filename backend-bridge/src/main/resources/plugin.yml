@@ -1,0 +1,11 @@
+name: SlashServerAuthBridge
+version: '${project.version}'
+main: com.dogetennant.slashserver.bridge.AuthBridgePlugin
+api-version: '1.13'
+description: Announces AuthPlayers logins to the Velocity proxy so SlashServer can gate server switches.
+author: DogeTennant
+
+# Soft, not hard: AuthPlayers is looked up reflectively and the bridge disables
+# itself with a clear message when it is absent.
+softdepend:
+  - AuthPlayers

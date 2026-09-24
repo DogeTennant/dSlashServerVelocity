@@ -1,0 +1,26 @@
+#
+# SlashServer auth bridge
+#
+# Announces AuthPlayers logins to the Velocity proxy so SlashServer knows who is
+# allowed to change servers. Install on every backend that runs the login wall.
+#
+
+# Must match authentication.channel in the proxy's SlashServer config.yml.
+channel: "slashserver:auth"
+
+# Event fired the moment a password is accepted. Hooked by name, so no CompleteAPI
+# jar is needed to build this plugin.
+#
+# This is what makes a post-login redirect to a preferred server work: the login
+# reaches the proxy in the same tick the password is accepted, rather than up to
+# one poll later, so the redirect cannot arrive before the permission for it.
+#
+# If the class is missing the bridge still works through polling alone, but a
+# redirect fired immediately after login may be refused by the proxy.
+auth-event-class: "gs.completeapi.event.PlayerAuthEvent"
+
+# Backstop sweep of AuthPlayers.isAuthed, in ticks (20 = 1 second).
+#
+# Catches logins that never fire the event above - an admin using /auth, and the
+# 30-second IP session resume that lets a returning player straight back in.
+poll-interval-ticks: 10

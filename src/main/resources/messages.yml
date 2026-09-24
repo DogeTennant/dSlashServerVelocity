@@ -1,0 +1,102 @@
+#
+# SlashServer messages
+#
+# Everything here is MiniMessage: https://docs.advntr.dev/minimessage/format.html
+# Colours, gradients, hover and click tags all work.
+#
+# Set any message to "" to silence it completely - no empty chat line is sent.
+#
+# Placeholders available in every server message:
+#
+#   <prefix>    the prefix below
+#   <server>    the server name from velocity.toml, e.g. hub
+#   <display>   servers.<name>.display-name from config.yml, or the server name
+#   <command>   the command that was run, without the slash
+#
+# Extra placeholders are noted per message.
+#
+
+prefix: "<gray>[<aqua>Network</aqua>]</gray> "
+
+#
+# Connecting
+#
+
+# Sent just before the switch starts.
+connecting: "<prefix><gray>Sending you to <white><display><gray>..."
+
+# Sent after the switch succeeded. Usually redundant with "connecting", so it is
+# off by default - give it a value to use it.
+connected: ""
+
+already-connected: "<prefix><yellow>You are already on <white><display><yellow>."
+
+# <permission> - the node that was missing
+no-permission: "<prefix><red>You do not have permission to use this."
+
+# <time> - whole seconds still to wait
+cooldown: "<prefix><red>Please wait <white><time><red>s before switching again."
+
+server-offline: "<prefix><red><display><red> is offline right now."
+
+# The server vanished from the proxy between registration and the command
+# running - normally only after another plugin unregisters it.
+server-unknown: "<prefix><red>That server is not available right now."
+
+# <reason> - the backend's own message, when it gave one
+connect-failed: "<prefix><red>Could not connect you to <white><display><red>. <reason>"
+
+player-only: "<prefix><red>Only players can run this. Use <white>/<command> <player><red> from console."
+
+# Shown when someone tries to switch servers before logging in. Also used for
+# /server and any other switch while authentication.guard-all-switches is on.
+not-authenticated: "<prefix><red>Log in first before switching servers."
+
+#
+# Moving other players:  /hub <player>
+#
+
+# <player> - the name that was typed
+player-not-found: "<prefix><red><white><player><red> is not online."
+
+# <player> - the target
+target-already-connected: "<prefix><yellow><white><player><yellow> is already on <white><display><yellow>."
+
+# The player you tried to move has not logged in yet. <player> - the target
+target-not-authenticated: "<prefix><red><white><player><red> has not logged in yet."
+
+# The player you tried to move is not allowed on that server. <player> - the target
+target-no-permission: "<prefix><red><white><player><red> is not allowed on <white><display><red>."
+
+# Shown to whoever ran the command. <player> - the target
+sent-other: "<prefix><gray>Sending <white><player><gray> to <white><display><gray>..."
+
+# Shown to the player being moved. <sender> - who moved them
+sent-by-other: "<prefix><gray>You were sent to <white><display><gray> by <white><sender><gray>."
+
+usage: "<prefix><gray>Usage: <white>/<command><gray> or <white>/<command> <player>"
+
+#
+# /slashserver
+#
+
+admin:
+  # <version> - the plugin version
+  help: "<prefix><aqua>SlashServer <gray>v<version><newline><gray>  <white>/slashserver reload <gray>- reload config.yml and messages.yml<newline><gray>  <white>/slashserver list <gray>- show every registered server command"
+
+  # <count> - server commands registered after the reload
+  reloaded: "<prefix><green>Reloaded. <white><count><green> server command(s) registered."
+
+  reload-failed: "<prefix><red>Reload hit an error - check the proxy console. The previous settings are still active."
+
+  # <input> - what was typed
+  unknown-subcommand: "<prefix><red>Unknown subcommand <white><input><red>. Try <white>/slashserver help<red>."
+
+  # <count> - number of servers listed
+  list-header: "<prefix><aqua><count></aqua> <gray>server command(s):"
+
+  # <server> <display> <command> <permission> <online> - online is the player
+  # count on that backend; <aliases> is a comma-separated list, or - when none
+  list-entry: "<gray>  <white>/<command> <gray>-> <display> <dark_gray>(<gray>aliases: <white><aliases><dark_gray>, <gray>online: <white><online><dark_gray>)"
+
+  list-empty: "<prefix><yellow>No server commands are registered. Check mode and disabled-servers in config.yml."

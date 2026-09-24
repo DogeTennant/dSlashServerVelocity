@@ -1,0 +1,237 @@
+#
+# SlashServer for Velocity
+#
+# Gives every backend server its own command, so players type /hub
+# instead of /server hub.
+#
+# Server names come from velocity.toml. Out of the box this file needs no
+# editing at all: every server on the proxy gets a command named after it.
+# After changing anything here run /slashserver reload - no restart needed.
+#
+
+# How servers are picked up:
+#
+#   auto   - every server in velocity.toml gets a command named after it.
+#            Use disabled-servers below to leave some out.
+#   manual - only the servers listed under "servers:" at the bottom get one.
+#
+mode: auto
+
+# Servers that should NOT get a command in auto mode.
+# Ignored in manual mode, where nothing is registered unless you list it.
+#
+# disabled-servers:
+#   - staff
+#   - dev
+disabled-servers: []
+
+# What to do when the command name is already taken by Velocity or another
+# plugin - for example a backend literally named "server" or "send".
+#
+#   false - leave the existing command alone and log a warning (recommended)
+#   true  - unregister the other command and take the name
+#
+override-existing: false
+
+#
+# Permissions  -  who is allowed on which server
+#
+permissions:
+  # false - anyone can reach every server (what most networks want)
+  # true  - each server needs its own node, see "format" below
+  #
+  # Turn this on to keep players out of a private server.
+  required: false
+
+  # Node required per server when "required" is true.
+  #
+  # <server> is replaced with the lower-cased server name, so a server named
+  # "test" needs slashserver.server.test and one named "hub" needs
+  # slashserver.server.hub. Nothing has to be declared anywhere: the node for a
+  # server exists as soon as the server does, and the exact list is printed to
+  # the console on startup so you can see what to grant.
+  #
+  # In LuckPerms:
+  #     /lp group default permission set slashserver.server.hub true
+  #     /lp group staff permission set slashserver.server.test true
+  #
+  # A wildcard works too, if your permission plugin supports it:
+  #     /lp group admin permission set slashserver.server.* true
+  #
+  # Per-server overrides live under servers.<name>.permission
+  format: "slashserver.server.<server>"
+
+  # Allows every server, whatever the nodes above say.
+  bypass: "slashserver.server.bypass"
+
+  # Check the permission on every route onto a server, not just the commands
+  # this plugin registers.
+  #
+  # Velocity's own /server takes one node for the entire network, so a player
+  # who can use it at all can name any backend and land there. Leave this on or
+  # /server walks straight past your per-server permissions.
+  guard-all-connections: true
+
+  # Also check when a player first joins the network.
+  #
+  # Off by default because a refusal there drops them off the network entirely,
+  # and the server they land on is normally decided by the "try" list in
+  # velocity.toml rather than by them. Turn it on if a forced host points at a
+  # restricted server, since that is a destination a player can choose.
+  check-initial-connection: false
+
+  # When "required" is true, should a player without the node see the command?
+  #
+  #   true  - the command is hidden; typing it gives Velocity's unknown
+  #           command error and it never shows in tab completion
+  #   false - the command stays visible and replies with the no-permission
+  #           message, which tells players the server exists
+  hide-without-permission: true
+
+  # Lets a player skip the cooldown below.
+  cooldown-bypass: "slashserver.cooldown.bypass"
+
+#
+# Moving other players:  /hub <player>
+#
+send-others:
+  enabled: true
+
+  # Lets someone use /<server> <player> at all.
+  permission: "slashserver.send.others"
+
+  # Lets them send a player onto a server that player has no permission for.
+  #
+  # Without this node the target's own per-server permission is required, since
+  # that node governs who may be on a server rather than who may put them there.
+  # With it, staff can pull someone into a private server to help them - each
+  # use is logged to the console with the node that was bypassed.
+  #
+  # This never bypasses the login gate: an unauthenticated player cannot be sent
+  # anywhere, whoever asks.
+  override-permission: "slashserver.send.override"
+
+#
+# Seconds a player must wait between switches. 0 disables the cooldown.
+#
+# Only successful switches a player made themselves start a cooldown - being
+# denied, or being moved by staff, never does.
+#
+cooldown-seconds: 0
+
+#
+# Ping the backend before connecting.
+#
+# Off by default because it adds a round trip to every command. Turn it on to
+# replace Velocity's generic connection error with the server-offline message
+# from messages.yml.
+#
+online-check:
+  enabled: false
+  timeout-millis: 1000
+
+# Tell the player when a connection attempt fails, including the backend's own
+# kick reason where there is one. Set to false to fail silently.
+report-connection-failures: true
+
+#
+# Login gate  -  READ THIS IF YOU RUN AN OFFLINE-MODE NETWORK
+#
+# Server commands are registered on the PROXY. Velocity matches and runs them
+# itself and never forwards them to the backend, so a login wall running on the
+# backend has nothing to cancel. Without this gate, a player sitting at the
+# login screen can type /survival and walk straight past it. Velocity's own
+# /server has the same problem.
+#
+# The proxy cannot tell on its own whether someone logged in - that state lives
+# in your auth plugin on the backend. The companion plugin in backend-bridge/
+# announces logins to the proxy over a plugin message channel; this gate keys
+# off those announcements and fails closed, so a player the proxy has never
+# heard about cannot switch servers.
+#
+authentication:
+
+  # auto  - on when the proxy is in offline mode, off when it is online mode.
+  #         Offline mode is the only case with a password wall to bypass.
+  # true  - always on. Requires the backend bridge, or nobody can switch.
+  # false - no gate. Only safe on an online-mode network with no login wall.
+  require-login: auto
+
+  # Also block /server and any other plugin's server switches, not just the
+  # commands this plugin registers. The bypass is proxy-wide, so leave this on
+  # unless something else on your proxy already gates switching.
+  guard-all-switches: true
+
+  # How long (milliseconds) a server switch waits for a login announcement
+  # before it is refused.
+  #
+  # An auth plugin that moves players to a preferred server right after login
+  # sends that redirect immediately after the login itself. Velocity handles the
+  # redirect inline on the backend connection but dispatches our announcement
+  # through the event manager, so the switch can arrive first even though it was
+  # sent second. This window lets the announcement catch up instead of the
+  # player being told to log in when they already have.
+  #
+  # Only ever delays a switch that is about to be refused. 0 disables the wait.
+  login-grace-millis: 500
+
+  # Servers that have no login wall of their own.
+  #
+  # Login state is tracked PER SERVER, because that is how the auth plugin holds
+  # it: passing the wall on the lobby says nothing about the wall on survival.
+  # A player is allowed to leave a server once that server reports them logged
+  # in - which means a backend that never reports anything, because it has no
+  # auth plugin and so no bridge, would trap players on it.
+  #
+  # List those servers here and players may always leave them.
+  #
+  # no-login-required:
+  #   - minigames
+  no-login-required: []
+
+  # Channel the backend bridge announces logins on. Must match the value in the
+  # bridge plugin's config. Messages that do not come from a backend server are
+  # rejected, so a modified client cannot authenticate itself.
+  channel: "slashserver:auth"
+
+#
+# Per-server settings
+#
+# In auto mode every entry here is optional - a server with no entry still gets
+# a command named after it. In manual mode only the servers listed here are
+# registered at all.
+#
+# Names must match velocity.toml. A name no server uses is logged as a warning
+# on startup so typos are easy to spot.
+#
+# Every option, with its default:
+#
+#   enabled:      true          set false to skip this server entirely
+#   command:      <server name> the command, without the leading slash
+#   aliases:      []            extra commands that do the same thing
+#   permission:   ""            blank means build it from permissions.format
+#   display-name: <server name> MiniMessage name used in messages
+#
+# servers:
+#
+#   hub:
+#     command: hub
+#     aliases:
+#       - lobby
+#       - l
+#     display-name: "<aqua>the Hub</aqua>"
+#
+#   survival:
+#     display-name: "<green>Survival</green>"
+#
+#   # A locked-down server: only players with the node below get the command,
+#   # no matter what permissions.format says.
+#   vip:
+#     permission: "network.rank.vip"
+#     display-name: "<gold>VIP Lounge</gold>"
+#
+#   # Registered on the proxy, but no slash command for it.
+#   build:
+#     enabled: false
+#
+servers: {}
